@@ -1,3 +1,11 @@
+/*
+   Library ที่ใช้
+   DFRobot_Heartrate -> ติดตั้งจาก Zipfile https://github.com/DFRobot/DFRobot_Heartrate
+   Adafruit_SSD1306 ค้นหาจาก library manager เลือก install all
+*/
+
+
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -12,14 +20,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #include "DFRobot_Heartrate.h"
 
 #define heartratePin A0
-#define SAMPLEDISPLAY 80
+#define SAMPLEDISPLAY 80     // จำนวนจุดกราฟที่ต้องการแสดง
+
 DFRobot_Heartrate heartrate(ANALOG_MODE);   // ANALOG_MODE or DIGITAL_MODE
 
 unsigned long previousMillis = 0;
 
 uint16_t  analogData[SAMPLEDISPLAY], indexdata, lastyaxis, maxYaxis, minYaxis;
 uint8_t  bpm;
-
 
 void setup() {
   Serial.begin(115200);
@@ -55,6 +63,7 @@ void loop() {
     }
   }
 
+  // แสดงค่าผ่านจอ oled
   if (indexdata >= SAMPLEDISPLAY) {
 
     display.clearDisplay();
@@ -64,10 +73,10 @@ void loop() {
     display.println("Heart beat");
     display.setTextSize(2);
     display.setCursor(90, 17);
-    if(minYaxis<200){
+    if (minYaxis < 200) {
       display.println(" -");
-    }else{
-    display.println(bpm);
+    } else {
+      display.println(bpm);
     }
     display.setCursor(90, 40);
     display.println("BPM");
@@ -86,6 +95,8 @@ void loop() {
       y_2 /= Yaxis;
       y_2 *= 40;
       y_2 =  int(40 - y_2);
+
+      // display graph
       display.drawLine(5 + data,   20 + y_1,  6 + data, 20 + y_2, SSD1306_WHITE);
     }
 
