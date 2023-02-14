@@ -10,13 +10,14 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #include "DFRobot_Heartrate.h"
-#define heartratePin A0
 
+#define heartratePin A0
+#define SAMPLEDISPLAY 80
 DFRobot_Heartrate heartrate(ANALOG_MODE);   // ANALOG_MODE or DIGITAL_MODE
 
 unsigned long previousMillis = 0;
 
-uint16_t  analogData[70], indexdata, lastyaxis, maxYaxis, minYaxis;
+uint16_t  analogData[SAMPLEDISPLAY], indexdata, lastyaxis, maxYaxis, minYaxis;
 uint8_t  bpm;
 
 
@@ -37,7 +38,7 @@ void loop() {
 
     uint16_t heartrateValueLast = heartrate.getValue(heartratePin); // A0 foot sampled values
     uint8_t rateValue = heartrate.getRate();   // Get heart rate value
-        Serial.println("analog:" + (String)heartrateValueLast);
+    //    Serial.println("analog:" + (String)heartrateValueLast);
     analogData[indexdata] = heartrateValueLast;
     indexdata ++;
 
@@ -50,36 +51,46 @@ void loop() {
 
     if (rateValue)  {
       bpm = rateValue;
-//      Serial.println(rateValue);
+      Serial.println(rateValue);
     }
   }
 
-  if (indexdata >= 70) {
+  if (indexdata >= SAMPLEDISPLAY) {
 
     display.clearDisplay();
-    display.setTextSize(2);             // Normal 1:1 pixel scale
+    display.setTextSize(1);             // Normal 1:1 pixel scale
     display.setTextColor(SSD1306_WHITE);        // Draw white text
-    display.setCursor(90, 10);
+    display.setCursor(65, 00);
+    display.println("Heart beat");
+    display.setTextSize(2);
+    display.setCursor(90, 17);
+    if(minYaxis<200){
+      display.println(" -");
+    }else{
     display.println(bpm);
-    display.setCursor(90, 30);
+    }
+    display.setCursor(90, 40);
     display.println("BPM");
 
     uint16_t Yaxis = maxYaxis - minYaxis;
-    Serial.println("yaxis:" + String(Yaxis));
+    //    Serial.println("yaxis:" + String(Yaxis));
     float y_1, y_2;
     y_2 = analogData[0] - minYaxis;
     y_2 /= Yaxis;
     y_2 *= 40;
     y_2 =  int(40 - y_2);
-    for (int data = 1; data < 70; data++) {
+
+    for (int data = 1; data < SAMPLEDISPLAY; data++) {
       y_1 = y_2;
       y_2 = analogData[data] - minYaxis;
       y_2 /= Yaxis;
       y_2 *= 40;
       y_2 =  int(40 - y_2);
-      display.drawLine(10 + data,   20 + y_1,  11 + data, 20 + y_2, SSD1306_WHITE);
+      display.drawLine(5 + data,   20 + y_1,  6 + data, 20 + y_2, SSD1306_WHITE);
     }
+
     display.display();
+
     indexdata = 0;
     maxYaxis = 0;
     minYaxis = 1000;
