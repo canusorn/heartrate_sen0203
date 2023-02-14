@@ -37,7 +37,7 @@ void loop() {
 
     uint16_t heartrateValueLast = heartrate.getValue(heartratePin); // A0 foot sampled values
     uint8_t rateValue = heartrate.getRate();   // Get heart rate value
-    //    Serial.println(heartrateValueLast);
+        Serial.println("analog:" + (String)heartrateValueLast);
     analogData[indexdata] = heartrateValueLast;
     indexdata ++;
 
@@ -50,7 +50,7 @@ void loop() {
 
     if (rateValue)  {
       bpm = rateValue;
-      //      Serial.println(rateValue);
+//      Serial.println(rateValue);
     }
   }
 
@@ -65,23 +65,24 @@ void loop() {
     display.println("BPM");
 
     uint16_t Yaxis = maxYaxis - minYaxis;
-
+    Serial.println("yaxis:" + String(Yaxis));
     float y_1, y_2;
+    y_2 = analogData[0] - minYaxis;
+    y_2 /= Yaxis;
+    y_2 *= 40;
+    y_2 =  int(40 - y_2);
     for (int data = 1; data < 70; data++) {
-      
-      y_1 = analogData[data - 1] - minYaxis;
-      y_1 /= Yaxis;
-      y_1 *= 34;
-      y_1 =  int(34 - y_1);
-
-
-      y_2 =  int(34 - ((analogData[data]  - minYaxis ) / Yaxis * 34 )) ;
-      display.drawLine(10+ data,   20 + y_1,  12 + data, 20 + y_2, SSD1306_WHITE);
+      y_1 = y_2;
+      y_2 = analogData[data] - minYaxis;
+      y_2 /= Yaxis;
+      y_2 *= 40;
+      y_2 =  int(40 - y_2);
+      display.drawLine(10 + data,   20 + y_1,  11 + data, 20 + y_2, SSD1306_WHITE);
     }
     display.display();
     indexdata = 0;
-    maxYaxis = 600;
-    minYaxis = 300;
+    maxYaxis = 0;
+    minYaxis = 1000;
   }
 
 }
