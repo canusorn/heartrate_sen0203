@@ -44,6 +44,7 @@ void loop() {
   if (currentMillis - previousMillis >= 20) {
     previousMillis = currentMillis;
 
+    // อ่านค่าจากเซนเซอร์
     uint16_t heartrateValueLast = heartrate.getValue(heartratePin); // A0 foot sampled values
     uint8_t rateValue = heartrate.getRate();   // Get heart rate value
     //    Serial.println("analog:" + (String)heartrateValueLast);
@@ -81,6 +82,7 @@ void loop() {
     display.setCursor(90, 40);
     display.println("BPM");
 
+    // คำนวณและแสดงค่ากราฟ
     uint16_t Yaxis = maxYaxis - minYaxis;
     //    Serial.println("yaxis:" + String(Yaxis));
     float y_1, y_2;
