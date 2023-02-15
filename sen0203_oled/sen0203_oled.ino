@@ -17,6 +17,15 @@
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+#include <TridentTD_LineNotify.h>
+
+#define SSID        "Apichat_2.4G_"
+#define PASSWORD    "4507240701"
+#define LINE_TOKEN  "7m68381D2LS8ByeflY4rVEf9pPEXMXllsuFRNGBTFfG"
+
+// 0-not detect  1-normal  2-lower 50 bpm  3-upper 120 bpm
+uint8_t notifystate;
+
 #include "DFRobot_Heartrate.h"
 
 #define heartratePin A0
@@ -36,6 +45,27 @@ void setup() {
 
   // Clear the buffer
   display.clearDisplay();
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0, 0);
+  display.print("Connecting Wifi");
+
+  WiFi.begin(SSID, PASSWORD);
+  Serial.printf("WiFi connecting to %s\n",  SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+
+    display.print(".");
+    display.display();
+
+    Serial.print(".");
+    delay(400);
+  }
+  Serial.printf("\nWiFi connected\nIP : ");
+  Serial.println(WiFi.localIP());
+
+  // กำหนด Line Token
+  LINE.setToken(LINE_TOKEN);
+
 }
 
 void loop() {
@@ -61,8 +91,30 @@ void loop() {
     if (rateValue)  {
       bpm = rateValue;
       Serial.println(rateValue);
+
+
+      // แจ้งเตือนผ่านไลน์
+      if (rateValue > 0 && rateValue < 50) {  // ชีพจรต่ำ
+        if (notifystate != 2) {
+          notifystate = 2;
+          LINE.notify("Heart rate : " + String(rateValue) + ", มีชีพจรต่ำ");
+        }
+      }
+      else if (rateValue > 120) {  // ชีพจรสูง
+        if (notifystate != 3) {
+          notifystate = 3;
+          LINE.notify("Heart rate : " + String(rateValue) + ", มีชีพจรสูงเกินไป");
+        }
+      } else if (rateValue > 50 && rateValue < 120) {  // ชีพจรปกติ
+        if (notifystate != 1) {
+          notifystate = 1;
+          LINE.notify("Heart rate : " + String(rateValue) + ", ปกติ");
+        }
+      }
     }
   }
+
+
 
   // แสดงค่าผ่านจอ oled
   if (indexdata >= SAMPLEDISPLAY) {
