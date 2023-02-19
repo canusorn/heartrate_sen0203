@@ -4,6 +4,8 @@
    Adafruit_SSD1306 ค้นหาจาก library manager เลือก install all
 */
 
+// leap year calculator expects year argument as years offset from 1970
+#define LEAP_YEAR(Y)     ( ((1970+(Y))>0) && !((1970+(Y))%4) && ( ((1970+(Y))%100) || !((1970+(Y))%400) ) )
 
 #include <ESP8266WiFi.h>
 #include <Wire.h>
@@ -44,7 +46,9 @@ const char* ntpServerName = "time.nist.gov";
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 WiFiUDP udp;// A UDP instance to let us send and receive packets over UDP
-uint32_t timestp;
+uint32_t timestp, nexttimestpupdate;
+String datetimeStr;
+static  const uint8_t monthDays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // API starts months from 1, this array starts from 0
 unsigned long previousMillis = 0;
 
 uint16_t  analogData[SAMPLEDISPLAY], indexdata, lastyaxis, maxYaxis, minYaxis;
@@ -82,6 +86,9 @@ void setup() {
   NTPupdate(); // update time
   timestamp.attach(1, []() {
     timestp++;
+    if (timestp > nexttimestpupdate) {
+      NTPupdate();
+    }
   });
 }
 
@@ -136,25 +143,16 @@ void loop() {
   // แสดงค่าผ่านจอ oled
   if (indexdata >= SAMPLEDISPLAY) {
 
-
-
     display.clearDisplay();
     display.setTextSize(1);             // Normal 1:1 pixel scale
     display.setTextColor(SSD1306_WHITE);        // Draw white text
     display.setCursor(0, 0);
 
-    // print the hour, minute and second:
-    display.print(((timestp + 25200)  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-    display.print(':');
-    if (((timestp % 3600) / 60) < 10) {
-      // In the first 10 minutes of each hour, we'll want a leading '0'
-      display.print('0');
-    }
-    display.print((timestp  % 3600) / 60); // print the minute (3600 equals secs per minute)
+    stamptodatetime();
+    display.print(datetimeStr);
 
-
-    display.setCursor(65, 00);
-    display.println("Heart beat");
+    //    display.setCursor(65, 00);
+    //    display.println("Heart beat");
     display.setTextSize(2);
     display.setCursor(90, 17);
     if (minYaxis < 200) {
@@ -218,23 +216,9 @@ void NTPupdate() {  //NTP update อัพเดทเวลาจากอิ�
     // subtract seventy years:
     unsigned long epoch = secsSince1900 - seventyYears;
 
-    timestp = epoch;
+    timestp = epoch + 7 * 3600;
 
-    // print the hour, minute and second:
-    Serial.print("The time is ");       // UTC is the time at Greenwich Meridian (GMT)
-    Serial.print(((epoch + 25200)  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-    Serial.print(':');
-    if (((epoch % 3600) / 60) < 10) {
-      // In the first 10 minutes of each hour, we'll want a leading '0'
-      Serial.print('0');
-    }
-    Serial.print((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
-    //    Serial.print(':');
-    //    if ((epoch % 60) < 10) {
-    //      // In the first 10 seconds of each minute, we'll want a leading '0'
-    //      Serial.print('0');
-    //    }
-    //    Serial.println(epoch % 60); // print the second
+    nexttimestpupdate = timestp + 3600;
   }
 }
 
@@ -259,4 +243,62 @@ void sendNTPpacket(IPAddress& address) {
   udp.beginPacket(address, 123); //NTP requests are to port 123
   udp.write(packetBuffer, NTP_PACKET_SIZE);
   udp.endPacket();
+}
+
+void stamptodatetime() {
+  uint8_t year;
+  uint8_t month, monthLength;
+  uint32_t time;
+  unsigned long days;
+
+  uint8_t tm_Second, tm_Minute, tm_Hour, tm_Wday, tm_Year, tm_Month, tm_Day;
+
+  time = (uint32_t)timestp;
+  tm_Second = time % 60;
+  time /= 60; // now it is minutes
+  tm_Minute = time % 60;
+  time /= 60; // now it is hours
+  tm_Hour = time % 24;
+  time /= 24; // now it is days
+  tm_Wday = ((time + 4) % 7) + 1;  // Sunday is day 1
+
+  year = 0;
+  days = 0;
+  while ((unsigned)(days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
+    year++;
+  }
+  tm_Year = year + 70; // year is offset from 1970
+  tm_Year %= 100;
+
+  days -= LEAP_YEAR(year) ? 366 : 365;
+  time  -= days; // now it is days in this year, starting at 0
+
+  days = 0;
+  month = 0;
+  monthLength = 0;
+  for (month = 0; month < 12; month++) {
+    if (month == 1) { // february
+      if (LEAP_YEAR(year)) {
+        monthLength = 29;
+      } else {
+        monthLength = 28;
+      }
+    } else {
+      monthLength = monthDays[month];
+    }
+
+    if (time >= monthLength) {
+      time -= monthLength;
+    } else {
+      break;
+    }
+  }
+  tm_Month = month + 1;  // jan is month 1
+  tm_Day = time + 1;     // day of month
+
+  datetimeStr = String(tm_Day) + "/" + String(tm_Month) + "/" + String(tm_Year) + " " + String(tm_Hour) + ":";
+  if (tm_Minute < 10) datetimeStr += "0";
+  datetimeStr += String(tm_Minute);
+
+  Serial.println(datetimeStr);
 }
