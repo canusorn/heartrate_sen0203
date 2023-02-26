@@ -2,6 +2,17 @@
    Library ที่ใช้
    DFRobot_Heartrate -> ติดตั้งจาก Zipfile https://github.com/DFRobot/DFRobot_Heartrate
    Adafruit_SSD1306 ค้นหาจาก library manager เลือก install all
+
+   sensor
+    signal(เขียว) -> A0
+    VCC(แดง)     -> 5v
+    GND(ดำ)     -> GND
+
+   oled
+    vcc -> 3v
+    gnd -> gnd
+    SDA -> D2
+    SCL -> D1
 */
 
 // leap year calculator expects year argument as years offset from 1970
