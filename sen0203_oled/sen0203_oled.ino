@@ -25,9 +25,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #include <TridentTD_LineNotify.h>
 
-#define SSID        "G6PD_2.4G"
-#define PASSWORD    "570610193"
-#define LINE_TOKEN  "7m68381D2LS8ByeflY4rVEf9pPEXMXllsuFRNGBTFfG"
+#define SSID        "wifi ssid"
+#define PASSWORD    "wifi pass"
+#define LINE_TOKEN  "token"
 
 // 0-not detect  1-normal  2-lower 50 bpm  3-upper 120 bpm
 uint8_t notifystate;
