@@ -1,7 +1,7 @@
 /*
    Library ที่ใช้
    DFRobot_Heartrate -> ติดตั้งจาก Zipfile https://github.com/DFRobot/DFRobot_Heartrate
-   Adafruit_SSD1306 ค้นหาจาก library manager เลือก install all
+   Adafruit_SH110X ค้นหาจาก library manager เลือก install all
 
    sensor
     signal(เขียว) -> A0
@@ -21,7 +21,7 @@
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SH110X.h>
 #include <WiFiUdp.h>
 #include <Ticker.h>
 
@@ -32,7 +32,7 @@ Ticker timestamp;
 
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #include <TridentTD_LineNotify.h>
 
@@ -68,12 +68,12 @@ uint8_t  bpm;
 void setup() {
   Serial.begin(115200);
 
-  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.begin(SCREEN_ADDRESS, true);
 
   // Clear the buffer
   display.clearDisplay();
   display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setTextColor(SH110X_WHITE);        // Draw white text
   display.setCursor(0, 0);
   display.print("Connecting Wifi");
 
@@ -156,7 +156,7 @@ void loop() {
 
     display.clearDisplay();
     display.setTextSize(1);             // Normal 1:1 pixel scale
-    display.setTextColor(SSD1306_WHITE);        // Draw white text
+    display.setTextColor(SH110X_WHITE);        // Draw white text
     display.setCursor(0, 0);
 
     stamptodatetime();
@@ -191,7 +191,7 @@ void loop() {
       y_2 =  int(40 - y_2);
 
       // display graph
-      display.drawLine(5 + data,   20 + y_1,  6 + data, 20 + y_2, SSD1306_WHITE);
+      display.drawLine(5 + data,   20 + y_1,  6 + data, 20 + y_2, SH110X_WHITE);
     }
 
     display.display();
