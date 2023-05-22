@@ -95,6 +95,8 @@ void setup() {
 
   udp.begin(localPort);
   NTPupdate(); // update time
+
+  // timer interupt
   timestamp.attach(1, []() {
     timestp++;
     if (timestp > nexttimestpupdate) {
@@ -104,13 +106,12 @@ void setup() {
 }
 
 void loop() {
-
-  unsigned long currentMillis = millis();
+  unsigned long currentMillis = millis();  // เปิดได้1วินาที millis = 1000
   if (currentMillis - previousMillis >= 20) {
     previousMillis = currentMillis;
 
     // อ่านค่าจากเซนเซอร์
-    uint16_t heartrateValueLast = heartrate.getValue(heartratePin); // A0 foot sampled values
+    uint16_t heartrateValueLast = heartrate.getValue(heartratePin); // A0 foot sampled values  0-3.3v  0-1023
     uint8_t rateValue = heartrate.getRate();   // Get heart rate value
     //    Serial.println("analog:" + (String)heartrateValueLast);
     analogData[indexdata] = heartrateValueLast;
@@ -127,29 +128,8 @@ void loop() {
       bpm = rateValue;
       Serial.println(rateValue);
 
-
-      // แจ้งเตือนผ่านไลน์
-      if (rateValue > 0 && rateValue < 50) {  // ชีพจรต่ำ
-        if (notifystate != 2) {
-          notifystate = 2;
-          LINE.notify("Heart rate : " + String(rateValue) + ", มีชีพจรต่ำ");
-        }
-      }
-      else if (rateValue > 120) {  // ชีพจรสูง
-        if (notifystate != 3) {
-          notifystate = 3;
-          LINE.notify("Heart rate : " + String(rateValue) + ", มีชีพจรสูงเกินไป");
-        }
-      } else if (rateValue > 50 && rateValue < 120) {  // ชีพจรปกติ
-        if (notifystate != 1) {
-          notifystate = 1;
-          LINE.notify("Heart rate : " + String(rateValue) + ", ปกติ");
-        }
-      }
     }
   }
-
-
 
   // แสดงค่าผ่านจอ oled
   if (indexdata >= SAMPLEDISPLAY) {
@@ -198,7 +178,29 @@ void loop() {
 
     indexdata = 0;
     maxYaxis = 0;
-    minYaxis = 1000;
+    minYaxis = 1023;
+
+    if (bpm)  {
+      // แจ้งเตือนผ่านไลน์
+      if (bpm > 0 && bpm < 50) {  // ชีพจรต่ำ
+        if (notifystate != 2) {
+          notifystate = 2;
+          LINE.notify("Heart rate : " + String(bpm) + ", มีชีพจรต่ำ");
+        }
+      }
+      else if (bpm > 120) {  // ชีพจรสูง
+        if (notifystate != 3) {
+          notifystate = 3;
+          LINE.notify("Heart rate : " + String(bpm) + ", มีชีพจรสูงเกินไป");
+        }
+      } else if (bpm > 50 && bpm < 120) {  // ชีพจรปกติ
+        if (notifystate != 1) {
+          notifystate = 1;
+          LINE.notify("Heart rate : " + String(bpm) + ", ปกติ");
+        }
+      }
+    }
+
   }
 
 }
@@ -308,7 +310,7 @@ void stamptodatetime() {
   tm_Day = time + 1;     // day of month
 
   datetimeStr = String(tm_Day) + "/" + String(tm_Month) + "/" + String(tm_Year) + " " + String(tm_Hour) + ":";
-  if (tm_Minute < 10) datetimeStr += "0";
+  if (tm_Minute < 10) datetimeStr += "0";  
   datetimeStr += String(tm_Minute);
 
   Serial.println(datetimeStr);
